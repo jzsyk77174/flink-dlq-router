@@ -53,6 +53,9 @@ flink run -c io.github.jzsyk77174.dlq.DlqRouterJob target/dlq-router-0.1.0.jar \
   --dlq-topic orders.dead-letter
 ```
 
+`--dlq-burst-threshold` (default 100) is how many dead letters per minute bucket count as a burst;
+see [docs/alerting.md](docs/alerting.md) for sizing it.
+
 ## Layout
 
 ```
