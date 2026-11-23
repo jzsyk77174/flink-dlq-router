@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 import org.apache.flink.streaming.api.operators.ProcessOperator;
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +59,9 @@ class OrderEventTest {
             assertEquals(1, main.size());
             assertTrue(main.get(0).contains("\"orderId\":\"o-1\""));
 
-            List<PoisonRecord> dead = harness.getSideOutput(DlqRouterJob.DEAD_LETTERS);
+            List<PoisonRecord> dead = harness.getSideOutput(DlqRouterJob.DEAD_LETTERS).stream()
+                    .map(StreamRecord::getValue)
+                    .toList();
             assertEquals(1, dead.size());
             assertEquals("malformed json", dead.get(0).reason);
             assertEquals("orders", dead.get(0).sourceTopic);
