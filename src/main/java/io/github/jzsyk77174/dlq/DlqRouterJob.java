@@ -82,6 +82,9 @@ public final class DlqRouterJob {
     }
 
     private static KafkaSink<String> sink(String bootstrap, String topic, String transactionalId) {
+        java.util.Properties producerConfig = new java.util.Properties();
+        producerConfig.setProperty("transaction.timeout.ms", TRANSACTION_TIMEOUT_MS);
+
         return KafkaSink.<String>builder()
                 .setBootstrapServers(bootstrap)
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
@@ -90,8 +93,7 @@ public final class DlqRouterJob {
                         .build())
                 .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
                 .setTransactionalIdPrefix(transactionalId)
-                .setKafkaProducerConfig(java.util.Map.of(
-                        "transaction.timeout.ms", TRANSACTION_TIMEOUT_MS))
+                .setKafkaProducerConfig(producerConfig)
                 .build();
     }
 
