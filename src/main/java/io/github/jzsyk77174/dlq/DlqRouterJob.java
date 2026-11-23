@@ -19,6 +19,8 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.OutputTag;
 
+import io.github.jzsyk77174.dlq.metrics.DlqRateAlert;
+
 /**
  * Order ingestion with an explicit failure path: records that do not parse go to a dead-letter
  * topic instead of failing the task.
@@ -34,6 +36,7 @@ public final class DlqRouterJob {
     private static final long CHECKPOINT_INTERVAL_MS = Duration.ofSeconds(30).toMillis();
     private static final long MIN_PAUSE_BETWEEN_CHECKPOINTS_MS = Duration.ofSeconds(10).toMillis();
     private static final String TRANSACTION_TIMEOUT_MS = "900000";
+    private static final long DEFAULT_BURST_THRESHOLD = 100L;
 
     public static void main(String[] args) throws Exception {
         ParameterTool params = ParameterTool.fromArgs(args);
@@ -70,6 +73,10 @@ public final class DlqRouterJob {
                 .uid("orders-sink");
 
         valid.getSideOutput(DEAD_LETTERS)
+                .process(new DlqRateAlert(Duration.ofMinutes(1),
+                        params.getLong("dlq-burst-threshold", DEFAULT_BURST_THRESHOLD)))
+                .name("dead-letter-rate")
+                .uid("dead-letter-rate")
                 .map(PoisonRecord::toJson)
                 .returns(Types.STRING)
                 .name("dead-letter-json")
